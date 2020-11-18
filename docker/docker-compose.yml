@@ -1,0 +1,61 @@
+version: "3"
+
+services:
+
+ mysql_horizon:
+   image: mysql:5.7
+   container_name: mysql
+   working_dir: /application
+   volumes:
+   - ./volume:/var/lib/mysql
+   environment:
+   - MYSQL_DATABASE='${DATABASE}'
+   - MYSQL_USER='${USER}'
+   - MYSQL_ROOT_PASSWORD='${PASSWORD}'
+   ports:
+   - "3307:3306"
+   networks:
+   - horizon_network
+
+ phpmyadmin_horizon:
+   image: phpmyadmin/phpmyadmin:latest
+   container_name: phpmyadmin
+   links:
+   - mysql_horizon
+   ports:
+   - 3000:80
+   environment:
+   - PMA_ARBITRARY=1
+   networks:    
+   - horizon_network
+
+ aplicacao_horizon:
+  image: leolegends/microservices_php:stable-horizon
+  container_name: aplicacao  
+  ports: 
+   - 8001:80
+  volumes:
+   - "${DIR}:/app"
+  environment:
+   WEB_DOCUMENT_ROOT: /app/public
+  networks:
+   - horizon_network
+ 
+ redis_horizon:
+  image: bitnami/redis
+  container_name: redis
+  user: root
+  ports:
+    - '6390:6379'
+  sysctls:
+    net.core.somaxconn: 1024
+  volumes:
+    - './redis:/bitnami/redis/data'
+  restart: always
+  environment:
+    REDIS_PASSWORD: '${REDIS_PASSWORD}'
+  networks:
+    - horizon_network
+
+networks: 
+ horizon_network:  
